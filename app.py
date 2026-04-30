@@ -7,10 +7,17 @@ import plotly.graph_objects as go
 import plotly.express as px
 import os
 import time
+import random
 
-# ---------------- DATABASE SETUP ----------------
-conn = sqlite3.connect('zenhabits_pro_final_v29.db', check_same_thread=False, timeout=20)
+# ---------------- DATABASE CONNECTION (STABLE) ----------------
+@st.cache_resource
+def get_connection():
+    return sqlite3.connect('zenhabits_pro_final_v29.db', check_same_thread=False, timeout=30)
+
+conn = get_connection()
 c = conn.cursor()
+
+# Tables setup
 c.execute('CREATE TABLE IF NOT EXISTS users (email TEXT PRIMARY KEY, name TEXT, pin TEXT)')
 c.execute('CREATE TABLE IF NOT EXISTS habits (user TEXT, date TEXT, task TEXT, status INT, reminder_time TEXT)')
 c.execute('CREATE TABLE IF NOT EXISTS notes (user TEXT, date TEXT, txt TEXT, sentiment FLOAT)')
@@ -41,6 +48,7 @@ st.markdown("""
         background: linear-gradient(45deg, #AD1457, #F06292) !important; 
         color: white !important; border-radius: 25px !important; border: none !important; font-weight: 600 !important; width: 100%;
     }
+    .quote-box { font-weight: 800; font-style: italic; color: #F06292; text-align: center; padding: 15px; border-top: 1px solid #444; font-size: 18px; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -59,6 +67,36 @@ def dashboard():
     with st.sidebar:
         if bin_str: st.markdown(f'<p align="center"><img src="data:image/jpeg;base64,{bin_str}" width="100"></p>', unsafe_allow_html=True)
         st.title(f"Hi, {st.session_state.name}")
+        
+        # --- BOLD RANDOM MOTIVATION ---
+        quotes = [
+            "Believe you can and you're halfway there.",
+            "Don't watch the clock; do what it does. Keep going.",
+            "Your habits decide your future.",
+            "Small progress is still progress.",
+            "Consistency is the key to mastery.",
+            "Focus on being productive instead of busy.",
+            "Success is the sum of small efforts repeated daily."
+        ]
+        # Quote is now Bold via CSS (font-weight: 800)
+        st.markdown(f'<div class="quote-box">"{random.choice(quotes)}"</div>', unsafe_allow_html=True)
+        
+        st.markdown("---")
+        
+        # --- SUGGEST FROM HISTORY ---
+        st.subheader("🔄 Quick Add (History)")
+        c.execute("SELECT DISTINCT task FROM habits WHERE user=? LIMIT 5", (u,))
+        history_tasks = [row[0] for row in c.fetchall()]
+        
+        if history_tasks:
+            sug_task = st.selectbox("Choose from previous tasks", ["Select..."] + history_tasks)
+            if sug_task != "Select..." and st.button("Add Suggested Task"):
+                c.execute("INSERT INTO habits (user, date, task, status, reminder_time) VALUES (?,?,?,?,?)", 
+                          (u, str(date.today()), sug_task, 0, "Off"))
+                conn.commit(); st.rerun()
+        else:
+            st.write("Add some tasks to see suggestions here!")
+
         st.markdown("---")
         show_reminders = st.toggle("Enable Reminder", value=True)
         tm = st.time_input("Set Time", datetime.now().time())
@@ -71,16 +109,23 @@ def dashboard():
         if st.button("Logout"):
             st.session_state.logged_in = False; st.rerun()
 
-    # Mastery Header
     df_all = pd.read_sql_query("SELECT * FROM habits WHERE user=?", conn, params=(u,))
     mastery = round((df_all['status'].sum() / len(df_all) * 100), 1) if not df_all.empty else 0.0
     st.markdown(f'<div class="mastery-header"><h1>{mastery}% Mastery Score</h1></div>', unsafe_allow_html=True)
 
     col_l, col_r = st.columns([1.3, 1])
     with col_l:
-        target_date = st.date_input("Select Date", date.today())
+        col_date, col_search = st.columns([0.4, 0.6])
+        target_date = col_date.date_input("Select Date", date.today())
+        
+        # --- SEARCH BAR ---
+        search_query = col_search.text_input("🔍 Search Task...", placeholder="Find your habit...")
+
         c.execute("SELECT rowid, task, status, reminder_time FROM habits WHERE user=? AND date=?", (u, str(target_date)))
         day_tasks = c.fetchall()
+
+        if search_query:
+            day_tasks = [t for t in day_tasks if search_query.lower() in t[1].lower()]
 
         reward_area = st.empty()
         if day_tasks:
@@ -96,9 +141,12 @@ def dashboard():
                         conn.commit(); st.rerun()
 
                 if check and not t_stat:
-                    st.balloons(); reward_area.success("Congratulations 🎉 Take your reward with timer, you deserve this 🤗 enjoy")
+                    st.balloons()
+                    reward_area.success("Congratulations 🎉 Take your reward with timer, you deserve this 🤗 enjoy")
                     c.execute("UPDATE habits SET status=1 WHERE rowid=?", (rid,))
-                    conn.commit(); time.sleep(8); reward_area.empty(); st.rerun()
+                    conn.commit()
+                    time.sleep(8)
+                    reward_area.empty(); st.rerun()
                 elif not check and t_stat:
                     c.execute("UPDATE habits SET status=0 WHERE rowid=?", (rid,))
                     conn.commit(); st.rerun()
@@ -114,21 +162,19 @@ def dashboard():
             conn.commit(); st.rerun()
 
     with col_r:
-        # 1. PIE CHART (SPEEDOMETER)
         st.subheader("🎯 Today's Speed")
-        if day_tasks:
-            done = sum(1 for x in day_tasks if x[2] == 1)
-            total = len(day_tasks)
+        c.execute("SELECT status FROM habits WHERE user=? AND date=?", (u, str(target_date)))
+        chart_data = c.fetchall()
+        if chart_data:
+            done = sum(1 for x in chart_data if x[0] == 1)
+            total = len(chart_data)
             perc = int(done/total*100) if total > 0 else 0
             sc = "#b71c1c" if perc < 50 else ("#ffeb3b" if perc < 80 else "#00c853")
             st.markdown(f'<h3 style="text-align:center; color:{sc};">Speed: {perc}% Done</h3>', unsafe_allow_html=True)
             fig_pie = go.Figure(go.Pie(values=[done, total-done], hole=0.7, marker=dict(colors=[sc, "#001a1a"])))
             fig_pie.update_layout(showlegend=False, height=180, margin=dict(t=0,b=0,l=0,r=0), paper_bgcolor='rgba(0,0,0,0)')
             st.plotly_chart(fig_pie, use_container_width=True)
-        else:
-            st.info("Add tasks to track speed.")
 
-        # 2. LINE GRAPH (PROGRESS)
         st.markdown("---")
         st.subheader("📈 Progress Trend")
         df_prog = pd.read_sql_query("SELECT date, SUM(status) as done FROM habits WHERE user=? GROUP BY date ORDER BY date ASC", conn, params=(u,))
@@ -138,7 +184,6 @@ def dashboard():
             fig_line.update_layout(height=180, margin=dict(t=0,b=0,l=0,r=0), paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font_color="white")
             st.plotly_chart(fig_line, use_container_width=True)
 
-        # 3. BAR GRAPH (MOOD)
         st.markdown("---")
         st.subheader("📊 Mood Analysis")
         df_mood = pd.read_sql_query("SELECT date, sentiment FROM notes WHERE user=? ORDER BY date ASC", conn, params=(u,))
