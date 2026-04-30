@@ -1,38 +1,65 @@
-# 🎯 ZenHabits Pro 
-**Master Your Day, One Habit at a Time.**
+🎯 ZenHabits Pro
+Master Your Day, One Habit at a Time.
 
-ZenHabits Pro ek minimalist aur powerful habit tracker hai jo Streamlit aur SQLite3 par based hai. Ye aapki daily consistency track karne, mood analyze karne aur progress visualization mein madad karta hai.
+ZenHabits Pro is a minimalist yet powerful habit tracker built using Streamlit and SQLite3. It is designed to help you maintain daily consistency, analyze your mood, and visualize your progress through data.
 
----
+✨ Features
+🔐 User Auth: Secure Login and Sign-Up system (PIN-based access).
 
-## ✨ Features
+✅ Daily Habit Tracking: Add tasks and enjoy interactive balloon animations upon completion.
 
-- **🔐 User Auth:** Secure Login aur Sign Up system (PIN based).
-- **✅ Daily Habit Tracking:** Tasks add karein aur completion par interactive balloons payein.
-- **📊 Mastery Score:** Aapki overall performance ka live percentage indicator.
-- **🔍 Smart Search:** Apne purane ya aaj ke tasks ko turant dhoondein.
-- **📝 Mood Journal:** Apne din ke baare mein likhein; app automatically sentiment score generate karega.
-- **📈 Visual Analytics:** 
-  - **Speed Gauge:** Aaj ka task completion status.
-  - **Progress Trend:** Pichle dino ka completion graph.
-  - **Mood Analysis:** Din-ba-din aapka mood kaisa raha, uska bar chart.
-- **🔄 Quick Add:** Aapki history se tasks suggest karta hai taaki baar-baar type na karna pade.
+📊 Mastery Score: A live percentage indicator reflecting your overall performance.
 
----
+🔍 Smart Search: Instantly find your current or past tasks using the search bar.
 
-## 🛠️ Tech Stack
+📝 Mood Journal: Log your daily thoughts; the app automatically calculates a sentiment score.
 
-- **Frontend:** [Streamlit](https://streamlit.io/)
-- **Database:** SQLite3
-- **Visualization:** Plotly (Express & Graph Objects)
-- **Data Handling:** Pandas
-- **Language:** Python
+📈 Visual Analytics:
 
----
+Speed Gauge: Real-time completion status for today’s goals.
 
-## 🚀 Installation & Setup
+Progress Trend: A line graph showing your completion history over time.
 
-1. **Repository Clone Karein:**
-   ```bash
-   git clone [https://github.com/aymensufi-design/zenhabits-pro.git](https://github.com/aymensufi-design/zenhabits-pro.git)
-   cd zenhabits-pro
+Mood Analysis: A bar chart visualizing your emotional well-being across different days.
+
+🔄 Quick Add: Automatically suggests tasks from your history to save you time.
+
+🛠️ Tech Stack
+Frontend: Streamlit
+
+Database: SQLite3
+
+Visualization: Plotly (Express & Graph Objects)
+
+Data Handling: Pandas
+
+Language: Python
+
+🚀 Installation & Setup
+Clone the Repository:
+
+Bash
+git clone https://github.com/aymensufi-design/zenhabits-pro.git
+cd zenhabits-pro
+Install Requirements:
+
+Bash
+pip install streamlit pandas plotly
+Run the Application:
+
+Bash
+streamlit run app.py
+📂 Project Structure
+app.py: The main application logic and UI.
+
+zenhabits_pro_final_v29.db: Local SQLite database file (generated automatically).
+
+zenhabitlogo.jpg: Application brand asset.
+
+👤 Author
+Ayme The Rapper
+
+BCA Final Year Student | Content Creator | Developer
+
+📄 License
+Distributed under the MIT License.
