@@ -57,7 +57,7 @@ zenhabits_pro_final_v29.db: Local SQLite database file (generated automatically)
 zenhabitlogo.jpg: Application brand asset.
 
 👤 Author
-Ayme The Rapper
+AYMEN SUFI
 
 BCA Final Year Student | Content Creator | Developer
 
